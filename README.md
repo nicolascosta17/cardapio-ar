@@ -10,7 +10,8 @@ Cardápio web para restaurantes onde o cliente vê o prato em **3D** e, pelo cel
 | Rota | O que é |
 |---|---|
 | `/` | Cardápio público (é o link do QR code da mesa) |
-| `/admin` | Painel para cadastrar pratos, fotos e modelos 3D |
+| `/admin/login` | Login do administrador |
+| `/admin` | Painel protegido para cadastrar pratos, fotos e modelos 3D |
 
 ## Rodar no computador
 ```bash
@@ -26,7 +27,8 @@ Abra o endereço "Network" que aparece no terminal pelo celular (mesmo Wi-Fi) pa
    insert into public.admins (user_id)
    select id from auth.users where email = 'seu@email.com';
    ```
-3. Entre em `/admin` com esse e-mail e senha.
+3. Entre em `/admin/login` com esse e-mail e senha.
+4. Recomendado: em **Authentication → Sign In / Providers → Email**, desative "Allow new users to sign up" (só você cria usuários).
 
 ## Como gerar o modelo 3D de um prato
 1. Escaneie com um app de fotogrametria (Polycam, Luma AI, RealityScan ou Reality Composer no iPhone). Luz uniforme, sem reflexo, prato numa base giratória, 40–80 fotos ao redor.
@@ -39,6 +41,9 @@ Abra o endereço "Network" que aparece no terminal pelo celular (mesmo Wi-Fi) pa
 - A chave `sb_publishable_...` é pública por natureza; a proteção vem das regras **RLS**:
   - qualquer pessoa só **lê** pratos ativos;
   - só usuários na tabela `admins` criam/editam/apagam pratos e arquivos.
+- O painel valida a sessão no servidor (`getUser`), sai sozinho após 30 min parado, bloqueia o login por 5 min após 5 senhas erradas e não é indexado por buscadores.
+- O código do admin é carregado à parte; o cliente do cardápio nunca o baixa.
+- Uploads aceitam só imagens (até 5 MB) e .glb/.usdz (até 30 MB).
 - Nunca coloque a chave `service_role`/secret no front.
 
 ## Estrutura

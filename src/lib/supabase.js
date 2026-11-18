@@ -12,6 +12,20 @@ export const BUCKET = 'cardapio'
 export const formatarPreco = (v) =>
   Number(v || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
 
+// Regras de upload (o bucket também limita a 50 MB no servidor)
+const REGRAS = {
+  imagem: { exts: ['jpg', 'jpeg', 'png', 'webp'], maxMB: 5 },
+  glb: { exts: ['glb'], maxMB: 30 },
+  usdz: { exts: ['usdz'], maxMB: 30 }
+}
+export function validarArquivo(file, tipo) {
+  const regra = REGRAS[tipo]
+  const ext = file.name.split('.').pop().toLowerCase()
+  if (!regra.exts.includes(ext)) return `formato inválido (use ${regra.exts.join(', ')}).`
+  if (file.size > regra.maxMB * 1024 * 1024) return `arquivo maior que ${regra.maxMB} MB.`
+  return null
+}
+
 // Envia um arquivo para o Storage e devolve a URL pública
 export async function enviarArquivo(file, pasta) {
   const ext = file.name.split('.').pop().toLowerCase()

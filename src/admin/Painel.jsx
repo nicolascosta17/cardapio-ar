@@ -1,62 +1,10 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { supabase, enviarArquivo, formatarPreco } from '../lib/supabase'
+import { supabase, enviarArquivo, formatarPreco, validarArquivo } from '../lib/supabase'
 
 const VAZIO = { nome: '', descricao: '', preco: '', categoria: 'Pratos', ordem: 0, ativo: true }
 
-export default function Admin() {
-  const [sessao, setSessao] = useState(null)
-  const [ehAdmin, setEhAdmin] = useState(null)
-
-  useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => setSessao(data.session))
-    const { data } = supabase.auth.onAuthStateChange((_e, s) => setSessao(s))
-    return () => data.subscription.unsubscribe()
-  }, [])
-
-  useEffect(() => {
-    if (!sessao) return setEhAdmin(null)
-    supabase.from('admins').select('user_id').eq('user_id', sessao.user.id).maybeSingle()
-      .then(({ data }) => setEhAdmin(Boolean(data)))
-  }, [sessao])
-
-  if (!sessao) return <Login />
-  if (ehAdmin === null) return <p className="status">Verificando acesso…</p>
-  if (!ehAdmin)
-    return (
-      <main className="admin">
-        <p className="status erro">Este usuário ({sessao.user.email}) não é administrador.</p>
-        <button className="btn" onClick={() => supabase.auth.signOut()}>Sair</button>
-      </main>
-    )
-  return <Painel email={sessao.user.email} />
-}
-
-function Login() {
-  const [email, setEmail] = useState('')
-  const [senha, setSenha] = useState('')
-  const [erro, setErro] = useState('')
-  const entrar = async (e) => {
-    e.preventDefault()
-    setErro('')
-    const { error } = await supabase.auth.signInWithPassword({ email, password: senha })
-    if (error) setErro('E-mail ou senha inválidos.')
-  }
-  return (
-    <main className="admin login">
-      <h1>Painel do cardápio</h1>
-      <form onSubmit={entrar} className="form">
-        <label>E-mail<input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required /></label>
-        <label>Senha<input type="password" value={senha} onChange={(e) => setSenha(e.target.value)} required /></label>
-        {erro && <p className="erro">{erro}</p>}
-        <button className="btn primario">Entrar</button>
-      </form>
-      <Link to="/">← Ver cardápio</Link>
-    </main>
-  )
-}
-
-function Painel({ email }) {
+export default function Painel({ email }) {
   const [pratos, setPratos] = useState([])
   const [form, setForm] = useState(VAZIO)
   const [editando, setEditando] = useState(null)
@@ -72,7 +20,13 @@ function Painel({ email }) {
 
   const campo = (k) => (e) =>
     setForm({ ...form, [k]: e.target.type === 'checkbox' ? e.target.checked : e.target.value })
-  const arquivo = (k) => (e) => setArquivos({ ...arquivos, [k]: e.target.files[0] })
+  const arquivo = (k) => (e) => {
+    const f = e.target.files[0]
+    const problema = f && validarArquivo(f, k)
+    if (problema) { setMsg('Erro: ' + problema); e.target.value = ''; return }
+    setMsg('')
+    setArquivos({ ...arquivos, [k]: f })
+  }
 
   const editar = (p) => {
     setEditando(p)
