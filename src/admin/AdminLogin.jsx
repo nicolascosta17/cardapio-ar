@@ -62,7 +62,7 @@ export default function AdminLogin() {
           <input type="email" autoComplete="username" value={email} onChange={(e) => setEmail(e.target.value)} required />
         </label>
         <label>Senha
-          <input type="password" autoComplete="current-password" value={senha} onChange={(e) => setSenha(e.target.value)} required minLength={8} />
+          <input type="password" autoComplete="current-password" value={senha} onChange={(e) => setSenha(e.target.value)} required />
         </label>
         {erro && <p className="erro">{erro}</p>}
         <button className="btn primario" disabled={enviando || bloqueado}>
