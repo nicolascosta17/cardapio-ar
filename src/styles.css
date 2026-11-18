@@ -85,7 +85,8 @@ button { font: inherit; cursor: pointer; }
   .admin.login { padding-top: 32px; }
   .admin-topo { flex-direction: column; align-items: stretch; }
   .admin-topo h1 { font-size: 26px; }
-  .admin-topo div { display: grid; grid-template-columns: 1fr 1fr; }
+  .admin-topo div { display: grid; grid-template-columns: repeat(3, 1fr); }
+  .admin-topo .btn { padding: 8px 6px; }
   .admin-topo .email { grid-column: 1 / -1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .card-form { padding: 16px; }
   .linha > label { flex-basis: 100%; }

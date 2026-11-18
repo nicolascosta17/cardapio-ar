@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { supabase, enviarArquivo, formatarPreco, validarArquivo } from '../lib/supabase'
+import TrocarSenha from './TrocarSenha'
 
 const VAZIO = { nome: '', descricao: '', preco: '', categoria: 'Pratos', ordem: 0, ativo: true }
 
@@ -11,6 +12,7 @@ export default function Painel({ email }) {
   const [arquivos, setArquivos] = useState({})
   const [salvando, setSalvando] = useState(false)
   const [msg, setMsg] = useState('')
+  const [trocandoSenha, setTrocandoSenha] = useState(false)
 
   const carregar = async () => {
     const { data } = await supabase.from('pratos').select('*').order('categoria').order('ordem')
@@ -73,9 +75,12 @@ export default function Painel({ email }) {
         <div>
           <span className="email">{email}</span>
           <Link to="/" className="btn">Ver cardápio</Link>
+          <button className="btn" onClick={() => setTrocandoSenha((v) => !v)}>Trocar senha</button>
           <button className="btn" onClick={() => supabase.auth.signOut()}>Sair</button>
         </div>
       </header>
+
+      {trocandoSenha && <TrocarSenha email={email} onFechar={() => setTrocandoSenha(false)} />}
 
       <form onSubmit={salvar} className="form card-form">
         <h2>{editando ? `Editando: ${editando.nome}` : 'Novo prato'}</h2>
