@@ -73,3 +73,39 @@ button { font: inherit; cursor: pointer; }
 .tabela th, .tabela td { padding: 10px 12px; border-bottom: 1px solid var(--linha); text-align: left; }
 .tabela tr.inativo td { opacity: .5; }
 .acoes { display: flex; gap: 6px; justify-content: flex-end; }
+
+/* ---------- Celular ---------- */
+.form input, .form textarea, .form select { font-size: 16px; } /* evita zoom automático no iPhone */
+.form input[type=file] { padding: 10px; background: var(--fundo); border: 1px dashed var(--linha); border-radius: 10px; width: 100%; }
+.btn, .btn-fechar, .filtros button { min-height: 44px; } /* alvo de toque confortável */
+.btn { display: inline-flex; align-items: center; justify-content: center; }
+
+@media (max-width: 640px) {
+  .admin { padding: 16px 12px calc(32px + env(safe-area-inset-bottom)); gap: 16px; }
+  .admin.login { padding-top: 32px; }
+  .admin-topo { flex-direction: column; align-items: stretch; }
+  .admin-topo h1 { font-size: 26px; }
+  .admin-topo div { display: grid; grid-template-columns: 1fr 1fr; }
+  .admin-topo .email { grid-column: 1 / -1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .card-form { padding: 16px; }
+  .linha > label { flex-basis: 100%; }
+  .linha .btn { flex: 1; }
+
+  /* Tabela vira lista de cartões */
+  .tabela, .tabela tbody, .tabela tr, .tabela td { display: block; width: 100%; }
+  .tabela { background: none; }
+  .tabela thead { display: none; }
+  .tabela tr { background: var(--branco); border: 1px solid var(--linha); border-radius: 14px; padding: 12px; margin-bottom: 10px; display: grid; grid-template-columns: 1fr 1fr; gap: 4px 12px; }
+  .tabela td { border: 0; padding: 2px 0; font-size: 14px; }
+  .tabela td::before { content: attr(data-label); display: block; font-size: 11px; text-transform: uppercase; letter-spacing: .06em; color: var(--suave); }
+  .tabela td.nome { grid-column: 1 / -1; font-family: Fraunces, Georgia, serif; font-size: 18px; }
+  .tabela td.nome::before { display: none; }
+  .tabela td.acoes { grid-column: 1 / -1; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; padding-top: 8px; }
+  .tabela td.acoes::before { display: none; }
+
+  /* Cardápio */
+  .hero { padding-top: 28px; }
+  .thumb { flex-basis: 92px; height: 92px; }
+  .modal { padding: 12px 12px calc(12px + env(safe-area-inset-bottom)); }
+  .modal-topo h2 { font-size: 22px; }
+}

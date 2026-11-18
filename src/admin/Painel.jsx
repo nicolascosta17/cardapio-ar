@@ -82,9 +82,9 @@ export default function Painel({ email }) {
         <label>Nome<input value={form.nome} onChange={campo('nome')} required /></label>
         <label>Descrição<textarea rows={2} value={form.descricao} onChange={campo('descricao')} /></label>
         <div className="linha">
-          <label>Preço (R$)<input inputMode="decimal" value={form.preco} onChange={campo('preco')} required /></label>
+          <label>Preço (R$)<input inputMode="decimal" placeholder="0,00" value={form.preco} onChange={campo('preco')} required /></label>
           <label>Categoria<input value={form.categoria} onChange={campo('categoria')} list="cats" required /></label>
-          <label>Ordem<input type="number" value={form.ordem} onChange={campo('ordem')} /></label>
+          <label>Ordem<input type="number" inputMode="numeric" value={form.ordem} onChange={campo('ordem')} /></label>
         </div>
         <datalist id="cats">
           {[...new Set(pratos.map((p) => p.categoria))].map((c) => <option key={c} value={c} />)}
@@ -105,10 +105,10 @@ export default function Painel({ email }) {
         <tbody>
           {pratos.map((p) => (
             <tr key={p.id} className={p.ativo ? '' : 'inativo'}>
-              <td>{p.nome}</td>
-              <td>{p.categoria}</td>
-              <td>{formatarPreco(p.preco)}</td>
-              <td>{p.modelo_glb_url ? '✓' : '—'}{p.modelo_usdz_url ? ' 🍎' : ''}</td>
+              <td data-label="Prato" className="nome">{p.nome}</td>
+              <td data-label="Categoria">{p.categoria}</td>
+              <td data-label="Preço">{formatarPreco(p.preco)}</td>
+              <td data-label="3D">{p.modelo_glb_url ? '✓' : '—'}{p.modelo_usdz_url ? ' 🍎' : ''}{p.ativo ? '' : ' · oculto'}</td>
               <td className="acoes">
                 <button className="btn" onClick={() => editar(p)}>Editar</button>
                 <button className="btn perigo" onClick={() => apagar(p)}>Apagar</button>
