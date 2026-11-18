@@ -1,0 +1,168 @@
+import { useEffect, useState } from 'react'
+import { Link } from 'react-router-dom'
+import { supabase, enviarArquivo, formatarPreco } from '../lib/supabase'
+
+const VAZIO = { nome: '', descricao: '', preco: '', categoria: 'Pratos', ordem: 0, ativo: true }
+
+export default function Admin() {
+  const [sessao, setSessao] = useState(null)
+  const [ehAdmin, setEhAdmin] = useState(null)
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data }) => setSessao(data.session))
+    const { data } = supabase.auth.onAuthStateChange((_e, s) => setSessao(s))
+    return () => data.subscription.unsubscribe()
+  }, [])
+
+  useEffect(() => {
+    if (!sessao) return setEhAdmin(null)
+    supabase.from('admins').select('user_id').eq('user_id', sessao.user.id).maybeSingle()
+      .then(({ data }) => setEhAdmin(Boolean(data)))
+  }, [sessao])
+
+  if (!sessao) return <Login />
+  if (ehAdmin === null) return <p className="status">Verificando acesso…</p>
+  if (!ehAdmin)
+    return (
+      <main className="admin">
+        <p className="status erro">Este usuário ({sessao.user.email}) não é administrador.</p>
+        <button className="btn" onClick={() => supabase.auth.signOut()}>Sair</button>
+      </main>
+    )
+  return <Painel email={sessao.user.email} />
+}
+
+function Login() {
+  const [email, setEmail] = useState('')
+  const [senha, setSenha] = useState('')
+  const [erro, setErro] = useState('')
+  const entrar = async (e) => {
+    e.preventDefault()
+    setErro('')
+    const { error } = await supabase.auth.signInWithPassword({ email, password: senha })
+    if (error) setErro('E-mail ou senha inválidos.')
+  }
+  return (
+    <main className="admin login">
+      <h1>Painel do cardápio</h1>
+      <form onSubmit={entrar} className="form">
+        <label>E-mail<input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required /></label>
+        <label>Senha<input type="password" value={senha} onChange={(e) => setSenha(e.target.value)} required /></label>
+        {erro && <p className="erro">{erro}</p>}
+        <button className="btn primario">Entrar</button>
+      </form>
+      <Link to="/">← Ver cardápio</Link>
+    </main>
+  )
+}
+
+function Painel({ email }) {
+  const [pratos, setPratos] = useState([])
+  const [form, setForm] = useState(VAZIO)
+  const [editando, setEditando] = useState(null)
+  const [arquivos, setArquivos] = useState({})
+  const [salvando, setSalvando] = useState(false)
+  const [msg, setMsg] = useState('')
+
+  const carregar = async () => {
+    const { data } = await supabase.from('pratos').select('*').order('categoria').order('ordem')
+    setPratos(data || [])
+  }
+  useEffect(() => { carregar() }, [])
+
+  const campo = (k) => (e) =>
+    setForm({ ...form, [k]: e.target.type === 'checkbox' ? e.target.checked : e.target.value })
+  const arquivo = (k) => (e) => setArquivos({ ...arquivos, [k]: e.target.files[0] })
+
+  const editar = (p) => {
+    setEditando(p)
+    setForm({ nome: p.nome, descricao: p.descricao || '', preco: p.preco, categoria: p.categoria, ordem: p.ordem, ativo: p.ativo })
+    setArquivos({})
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+  const limpar = () => { setEditando(null); setForm(VAZIO); setArquivos({}); }
+
+  const salvar = async (e) => {
+    e.preventDefault()
+    setSalvando(true)
+    setMsg('')
+    try {
+      const dados = { ...form, preco: Number(String(form.preco).replace(',', '.')) || 0, ordem: Number(form.ordem) || 0 }
+      if (arquivos.imagem) dados.imagem_url = await enviarArquivo(arquivos.imagem, 'imagens')
+      if (arquivos.glb) dados.modelo_glb_url = await enviarArquivo(arquivos.glb, 'modelos')
+      if (arquivos.usdz) dados.modelo_usdz_url = await enviarArquivo(arquivos.usdz, 'modelos')
+      const { error } = editando
+        ? await supabase.from('pratos').update(dados).eq('id', editando.id)
+        : await supabase.from('pratos').insert(dados)
+      if (error) throw error
+      setMsg(editando ? 'Prato atualizado!' : 'Prato cadastrado!')
+      limpar()
+      e.target.reset()
+      carregar()
+    } catch (err) {
+      setMsg('Erro: ' + err.message)
+    } finally {
+      setSalvando(false)
+    }
+  }
+
+  const apagar = async (p) => {
+    if (!window.confirm(`Apagar "${p.nome}"?`)) return
+    await supabase.from('pratos').delete().eq('id', p.id)
+    carregar()
+  }
+
+  return (
+    <main className="admin">
+      <header className="admin-topo">
+        <h1>Painel do cardápio</h1>
+        <div>
+          <span className="email">{email}</span>
+          <Link to="/" className="btn">Ver cardápio</Link>
+          <button className="btn" onClick={() => supabase.auth.signOut()}>Sair</button>
+        </div>
+      </header>
+
+      <form onSubmit={salvar} className="form card-form">
+        <h2>{editando ? `Editando: ${editando.nome}` : 'Novo prato'}</h2>
+        <label>Nome<input value={form.nome} onChange={campo('nome')} required /></label>
+        <label>Descrição<textarea rows={2} value={form.descricao} onChange={campo('descricao')} /></label>
+        <div className="linha">
+          <label>Preço (R$)<input inputMode="decimal" value={form.preco} onChange={campo('preco')} required /></label>
+          <label>Categoria<input value={form.categoria} onChange={campo('categoria')} list="cats" required /></label>
+          <label>Ordem<input type="number" value={form.ordem} onChange={campo('ordem')} /></label>
+        </div>
+        <datalist id="cats">
+          {[...new Set(pratos.map((p) => p.categoria))].map((c) => <option key={c} value={c} />)}
+        </datalist>
+        <label>Foto do prato<input type="file" accept="image/*" onChange={arquivo('imagem')} /></label>
+        <label>Modelo 3D (.glb) — Android e navegador<input type="file" accept=".glb" onChange={arquivo('glb')} /></label>
+        <label>Modelo 3D (.usdz) — iPhone (opcional)<input type="file" accept=".usdz" onChange={arquivo('usdz')} /></label>
+        <label className="check"><input type="checkbox" checked={form.ativo} onChange={campo('ativo')} /> Aparece no cardápio</label>
+        {msg && <p className={msg.startsWith('Erro') ? 'erro' : 'ok'}>{msg}</p>}
+        <div className="linha">
+          <button className="btn primario" disabled={salvando}>{salvando ? 'Salvando…' : 'Salvar'}</button>
+          {editando && <button type="button" className="btn" onClick={limpar}>Cancelar</button>}
+        </div>
+      </form>
+
+      <table className="tabela">
+        <thead><tr><th>Prato</th><th>Categoria</th><th>Preço</th><th>3D</th><th></th></tr></thead>
+        <tbody>
+          {pratos.map((p) => (
+            <tr key={p.id} className={p.ativo ? '' : 'inativo'}>
+              <td>{p.nome}</td>
+              <td>{p.categoria}</td>
+              <td>{formatarPreco(p.preco)}</td>
+              <td>{p.modelo_glb_url ? '✓' : '—'}{p.modelo_usdz_url ? ' 🍎' : ''}</td>
+              <td className="acoes">
+                <button className="btn" onClick={() => editar(p)}>Editar</button>
+                <button className="btn perigo" onClick={() => apagar(p)}>Apagar</button>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </main>
+  )
+}
