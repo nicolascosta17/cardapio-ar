@@ -1,10 +1,11 @@
 import { useEffect, useMemo, useState } from 'react'
+import { useParams, Link } from 'react-router-dom'
 import { supabase, formatarPreco } from '../lib/supabase'
 import Visualizador3D from '../components/Visualizador3D'
 
-const NOME = import.meta.env.VITE_NOME_RESTAURANTE || 'Nosso Cardápio'
-
 export default function Cardapio() {
+  const { slug } = useParams()
+  const [loja, setLoja] = useState(null)
   const [pratos, setPratos] = useState([])
   const [carregando, setCarregando] = useState(true)
   const [erro, setErro] = useState('')
@@ -12,18 +13,24 @@ export default function Cardapio() {
   const [aberto, setAberto] = useState(null)
 
   useEffect(() => {
-    supabase
-      .from('pratos')
-      .select('*')
-      .eq('ativo', true)
-      .order('categoria')
-      .order('ordem')
-      .then(({ data, error }) => {
-        if (error) setErro('Não foi possível carregar o cardápio.')
-        else setPratos(data)
-        setCarregando(false)
-      })
-  }, [])
+    let ativo = true
+    setCarregando(true); setErro(''); setLoja(null); setPratos([])
+    ;(async () => {
+      const { data: l, error: e1 } = await supabase.from('lojas').select('id, nome, slug').eq('slug', slug).eq('ativo', true).maybeSingle()
+      if (!ativo) return
+      if (e1) { setErro('Não foi possível carregar o cardápio.'); setCarregando(false); return }
+      if (!l) { setErro('nao-encontrada'); setCarregando(false); return }
+      setLoja(l)
+      document.title = `${l.nome} · Cardápio 3D`
+      const { data, error } = await supabase.from('pratos').select('*')
+        .eq('loja_id', l.id).eq('ativo', true).order('categoria').order('ordem')
+      if (!ativo) return
+      if (error) setErro('Não foi possível carregar o cardápio.')
+      else setPratos(data)
+      setCarregando(false)
+    })()
+    return () => { ativo = false }
+  }, [slug])
 
   const categorias = useMemo(
     () => ['Todos', ...new Set(pratos.map((p) => p.categoria))],
@@ -35,7 +42,7 @@ export default function Cardapio() {
     <main className="cardapio">
       <header className="hero">
         <p className="sobre">Cardápio em realidade aumentada</p>
-        <h1>{NOME}</h1>
+        <h1>{loja?.nome || ' '}</h1>
         <p>Toque em um prato com <span className="tag3d">3D</span> para vê-lo de todos os ângulos — e em cima da sua mesa.</p>
       </header>
 
@@ -50,7 +57,9 @@ export default function Cardapio() {
       )}
 
       {carregando && <p className="status">Carregando…</p>}
-      {erro && <p className="status erro">{erro}</p>}
+      {erro === 'nao-encontrada' ? (
+        <p className="status">Cardápio não encontrado. <Link to="/">Voltar</Link></p>
+      ) : erro && <p className="status erro">{erro}</p>}
 
       <ul className="lista">
         {visiveis.map((p) => {

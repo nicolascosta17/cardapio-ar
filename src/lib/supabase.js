@@ -8,7 +8,8 @@ const key = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || 'sb_publishable_6CL
 // Guarda, antes do cliente limpar a URL, se a pessoa chegou pelo link de "esqueci a senha"
 const hash = typeof window !== 'undefined' ? window.location.hash : ''
 export const linkRecuperacao = {
-  valido: hash.includes('type=recovery'),
+  valido: hash.includes('type=recovery') || hash.includes('type=invite'),
+  convite: hash.includes('type=invite'),
   expirado: hash.includes('error_code=otp_expired') || hash.includes('error=access_denied')
 }
 

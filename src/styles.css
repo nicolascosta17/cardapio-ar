@@ -112,3 +112,33 @@ button { font: inherit; cursor: pointer; }
 }
 
 .btn.link { border: 0; background: none; text-decoration: underline; color: var(--suave); }
+
+/* ---------- Multi-lojas ---------- */
+.inicio .linha { gap: 10px; }
+.abas { display: flex; gap: 8px; border-bottom: 1px solid var(--linha); }
+.abas button { border: 0; background: none; padding: 12px 14px; font-weight: 600; color: var(--suave); border-bottom: 3px solid transparent; min-height: 44px; }
+.abas button.ativo { color: var(--tinta); border-bottom-color: var(--vinho); }
+.abas button:disabled { opacity: .4; }
+.seletor-loja { display: grid; gap: 4px; font-size: 14px; font-weight: 500; }
+.seletor-loja select { font: inherit; font-size: 16px; padding: 10px 12px; border: 1px solid var(--linha); border-radius: 10px; background: var(--branco); }
+.loja-atual { margin: 0; color: var(--suave); }
+.slug { display: flex; align-items: center; border: 1px solid var(--linha); border-radius: 10px; background: var(--fundo); overflow: hidden; }
+.slug span { padding: 0 0 0 12px; color: var(--suave); font-size: 14px; white-space: nowrap; }
+.form .slug input { border: 0; background: none; padding-left: 2px; }
+.link-acesso { display: grid; gap: 8px; background: #fff7ed; border: 1px solid #fed7aa; border-radius: 12px; padding: 12px; font-size: 14px; }
+.link-acesso p { margin: 0; }
+.link-acesso input { font: inherit; font-size: 13px; padding: 8px 10px; border: 1px solid var(--linha); border-radius: 8px; width: 100%; }
+.lista-lojas { list-style: none; padding: 0; margin: 0; display: grid; gap: 10px; }
+.cartao-loja { background: var(--branco); border: 1px solid var(--linha); border-radius: 14px; padding: 14px; display: grid; gap: 10px; }
+.cartao-loja.inativo { opacity: .7; }
+.cartao-loja h3 { font-size: 20px; }
+.cartao-loja a { color: var(--vinho); font-size: 14px; word-break: break-all; }
+.selo { margin-left: 8px; font-size: 11px; background: var(--linha); padding: 2px 8px; border-radius: 99px; }
+.acessos { display: grid; gap: 10px; border-top: 1px solid var(--linha); padding-top: 10px; }
+.acessos h4 { margin: 0; font-size: 14px; }
+.acessos ul { list-style: none; padding: 0; margin: 0; display: grid; gap: 6px; }
+.acessos li { display: flex; justify-content: space-between; align-items: center; gap: 8px; font-size: 14px; word-break: break-all; }
+.acessos small { color: var(--suave); }
+@media (max-width: 640px) {
+  .cartao-loja .linha .btn { flex: 1 1 30%; }
+}

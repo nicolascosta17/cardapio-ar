@@ -9,7 +9,8 @@ Cardápio web para restaurantes onde o cliente vê o prato em **3D** e, pelo cel
 ## Rotas
 | Rota | O que é |
 |---|---|
-| `/` | Cardápio público (é o link do QR code da mesa) |
+| `/` | Página inicial da plataforma |
+| `/nome-da-loja` | Cardápio público de cada loja (é o link do QR code da mesa) |
 | `/admin/login` | Login do administrador |
 | `/admin` | Painel protegido para cadastrar pratos, fotos e modelos 3D |
 
@@ -19,6 +20,11 @@ npm install
 npm run dev
 ```
 Abra o endereço "Network" que aparece no terminal pelo celular (mesmo Wi-Fi) para testar. O AR de verdade precisa de **HTTPS**, então teste a câmera depois de publicar no Netlify.
+
+## Várias lojas (plataforma)
+- **Dono da plataforma** (tabela `admins`): no `/admin`, aba **Lojas**, cadastra cada empresa (nome, endereço e e-mail do responsável). O sistema gera um **link de acesso** para mandar pelo WhatsApp; o responsável cria a própria senha por ele.
+- **Responsável da loja** (tabela `loja_membros`): entra no mesmo `/admin` e só vê/edita os pratos da própria loja.
+- A criação de usuários roda na Edge Function `supabase/functions/gestao-lojas` (usa a chave secreta só no servidor e confere se quem chama é o dono da plataforma).
 
 ## Criar o primeiro administrador
 1. No Supabase: **Authentication → Users → Add user** (e-mail + senha, marque "Auto confirm").

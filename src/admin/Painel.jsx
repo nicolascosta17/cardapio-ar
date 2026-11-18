@@ -1,24 +1,21 @@
 import { useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
 import { supabase, enviarArquivo, formatarPreco, validarArquivo } from '../lib/supabase'
-import TrocarSenha from './TrocarSenha'
 
 const VAZIO = { nome: '', descricao: '', preco: '', categoria: 'Pratos', ordem: 0, ativo: true }
 
-export default function Painel({ email }) {
+export default function Painel({ loja }) {
   const [pratos, setPratos] = useState([])
   const [form, setForm] = useState(VAZIO)
   const [editando, setEditando] = useState(null)
   const [arquivos, setArquivos] = useState({})
   const [salvando, setSalvando] = useState(false)
   const [msg, setMsg] = useState('')
-  const [trocandoSenha, setTrocandoSenha] = useState(false)
 
   const carregar = async () => {
-    const { data } = await supabase.from('pratos').select('*').order('categoria').order('ordem')
+    const { data } = await supabase.from('pratos').select('*').eq('loja_id', loja.id).order('categoria').order('ordem')
     setPratos(data || [])
   }
-  useEffect(() => { carregar() }, [])
+  useEffect(() => { carregar(); limpar(); setMsg('') }, [loja.id]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const campo = (k) => (e) =>
     setForm({ ...form, [k]: e.target.type === 'checkbox' ? e.target.checked : e.target.value })
@@ -43,10 +40,10 @@ export default function Painel({ email }) {
     setSalvando(true)
     setMsg('')
     try {
-      const dados = { ...form, preco: Number(String(form.preco).replace(',', '.')) || 0, ordem: Number(form.ordem) || 0 }
-      if (arquivos.imagem) dados.imagem_url = await enviarArquivo(arquivos.imagem, 'imagens')
-      if (arquivos.glb) dados.modelo_glb_url = await enviarArquivo(arquivos.glb, 'modelos')
-      if (arquivos.usdz) dados.modelo_usdz_url = await enviarArquivo(arquivos.usdz, 'modelos')
+      const dados = { ...form, loja_id: loja.id, preco: Number(String(form.preco).replace(',', '.')) || 0, ordem: Number(form.ordem) || 0 }
+      if (arquivos.imagem) dados.imagem_url = await enviarArquivo(arquivos.imagem, `${loja.id}/imagens`)
+      if (arquivos.glb) dados.modelo_glb_url = await enviarArquivo(arquivos.glb, `${loja.id}/modelos`)
+      if (arquivos.usdz) dados.modelo_usdz_url = await enviarArquivo(arquivos.usdz, `${loja.id}/modelos`)
       const { error } = editando
         ? await supabase.from('pratos').update(dados).eq('id', editando.id)
         : await supabase.from('pratos').insert(dados)
@@ -69,19 +66,7 @@ export default function Painel({ email }) {
   }
 
   return (
-    <main className="admin">
-      <header className="admin-topo">
-        <h1>Painel do cardápio</h1>
-        <div>
-          <span className="email">{email}</span>
-          <Link to="/" className="btn">Ver cardápio</Link>
-          <button className="btn" onClick={() => setTrocandoSenha((v) => !v)}>Trocar senha</button>
-          <button className="btn" onClick={() => supabase.auth.signOut()}>Sair</button>
-        </div>
-      </header>
-
-      {trocandoSenha && <TrocarSenha email={email} onFechar={() => setTrocandoSenha(false)} />}
-
+    <>
       <form onSubmit={salvar} className="form card-form">
         <h2>{editando ? `Editando: ${editando.nome}` : 'Novo prato'}</h2>
         <label>Nome<input value={form.nome} onChange={campo('nome')} required /></label>
@@ -122,6 +107,7 @@ export default function Painel({ email }) {
           ))}
         </tbody>
       </table>
-    </main>
+      {pratos.length === 0 && <p className="status">Nenhum prato cadastrado nesta loja ainda.</p>}
+    </>
   )
 }

@@ -1,12 +1,29 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
 
 const INATIVIDADE_MS = 30 * 60 * 1000 // sai sozinho após 30 min parado
 
-// Estado: 'carregando' | 'deslogado' | 'negado' | 'admin'
+// estado: 'carregando' | 'deslogado' | 'negado' | 'admin'
+// superAdmin: dono da plataforma (cadastra lojas)
+// lojas: lojas que esta pessoa pode gerenciar (super admin vê todas)
 export function useSessaoAdmin() {
   const [estado, setEstado] = useState('carregando')
   const [usuario, setUsuario] = useState(null)
+  const [superAdmin, setSuperAdmin] = useState(false)
+  const [lojas, setLojas] = useState([])
+
+  const carregarLojas = useCallback(async (user, ehSuper) => {
+    let lista = []
+    if (ehSuper) {
+      const { data } = await supabase.from('lojas').select('*').order('nome')
+      lista = data || []
+    } else {
+      const { data } = await supabase.from('loja_membros').select('lojas(*)').eq('user_id', user.id)
+      lista = (data || []).map((m) => m.lojas).filter(Boolean).sort((a, b) => a.nome.localeCompare(b.nome))
+    }
+    setLojas(lista)
+    return lista
+  }, [])
 
   useEffect(() => {
     let ativo = true
@@ -23,10 +40,13 @@ export function useSessaoAdmin() {
         if (ativo) setEstado('deslogado')
         return
       }
-      const { data } = await supabase.from('admins').select('user_id').eq('user_id', user.id).maybeSingle()
+      const { data: adm } = await supabase.from('admins').select('user_id').eq('user_id', user.id).maybeSingle()
+      const ehSuper = Boolean(adm)
+      const lista = await carregarLojas(user, ehSuper)
       if (!ativo) return
       setUsuario(user)
-      setEstado(data ? 'admin' : 'negado')
+      setSuperAdmin(ehSuper)
+      setEstado(ehSuper || lista.length > 0 ? 'admin' : 'negado')
     }
 
     supabase.auth.getSession().then(({ data }) => verificar(data.session))
@@ -35,7 +55,7 @@ export function useSessaoAdmin() {
       else if (evento === 'SIGNED_IN' || evento === 'USER_UPDATED') verificar(session)
     })
     return () => { ativo = false; sub.subscription.unsubscribe() }
-  }, [])
+  }, [carregarLojas])
 
   // Logout automático por inatividade
   useEffect(() => {
@@ -54,7 +74,9 @@ export function useSessaoAdmin() {
     }
   }, [estado])
 
-  return { estado, usuario }
+  const recarregarLojas = useCallback(() => usuario && carregarLojas(usuario, superAdmin), [usuario, superAdmin, carregarLojas])
+
+  return { estado, usuario, superAdmin, lojas, recarregarLojas }
 }
 
 // Pede para buscadores não indexarem as páginas do admin

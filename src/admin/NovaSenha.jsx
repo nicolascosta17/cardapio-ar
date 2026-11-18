@@ -52,7 +52,7 @@ export default function NovaSenha() {
 
   return (
     <main className="admin login">
-      <h1>Criar nova senha</h1>
+      <h1>{linkRecuperacao.convite ? 'Bem-vindo! Crie sua senha' : 'Criar nova senha'}</h1>
       <form onSubmit={salvar} className="form card-form">
         <label>Nova senha (mínimo 8 caracteres)
           <input type="password" autoComplete="new-password" value={nova} onChange={(e) => setNova(e.target.value)} required minLength={8} />

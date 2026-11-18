@@ -2,22 +2,22 @@ import { Navigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useSessaoAdmin, useNoIndex } from './useSessaoAdmin'
 
-// Só renderiza o conteúdo para administradores logados.
+// Só renderiza o conteúdo para quem pode gerenciar alguma loja.
 // Atenção: isto é só a "porta da frente". Quem realmente protege os dados
 // são as regras RLS do Supabase — mesmo burlando o front, ninguém grava nada.
 export default function RotaAdmin({ children }) {
   useNoIndex()
-  const { estado, usuario } = useSessaoAdmin()
+  const sessao = useSessaoAdmin()
 
-  if (estado === 'carregando') return <p className="status">Verificando acesso…</p>
-  if (estado === 'deslogado') return <Navigate to="/admin/login" replace />
-  if (estado === 'negado')
+  if (sessao.estado === 'carregando') return <p className="status">Verificando acesso…</p>
+  if (sessao.estado === 'deslogado') return <Navigate to="/admin/login" replace />
+  if (sessao.estado === 'negado')
     return (
       <main className="admin login">
         <h1>Acesso negado</h1>
-        <p className="erro">O usuário {usuario?.email} não tem permissão de administrador.</p>
+        <p className="erro">O usuário {sessao.usuario?.email} não está vinculado a nenhuma loja.</p>
         <button className="btn" onClick={() => supabase.auth.signOut()}>Sair</button>
       </main>
     )
-  return children(usuario)
+  return children(sessao)
 }
