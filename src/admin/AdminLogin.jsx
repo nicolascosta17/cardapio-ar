@@ -22,6 +22,8 @@ export default function AdminLogin() {
   const [enviando, setEnviando] = useState(false)
   const [bloqueio, setBloqueio] = useState(lerBloqueio)
   const [agora, setAgora] = useState(Date.now())
+  const [aviso, setAviso] = useState('')
+  const [enviandoLink, setEnviandoLink] = useState(false)
 
   const bloqueado = bloqueio.ate > agora
   useEffect(() => {
@@ -51,6 +53,21 @@ export default function AdminLogin() {
     salvarBloqueio({ falhas: 0, ate: 0 })
   }
 
+  const esqueci = async () => {
+    setErro(''); setAviso('')
+    if (!email.trim()) return setErro('Digite seu e-mail acima e toque em "Esqueci a senha" de novo.')
+    setEnviandoLink(true)
+    const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
+      redirectTo: `${window.location.origin}/admin/nova-senha`
+    })
+    setEnviandoLink(false)
+    if (error && /rate|limit|security purposes/i.test(error.message)) {
+      return setErro('Muitos pedidos seguidos. Aguarde alguns minutos e tente de novo.')
+    }
+    // Mensagem igual existindo ou não o e-mail, para não revelar quem é admin
+    setAviso('Se este e-mail for de um administrador, você vai receber um link para criar uma nova senha. Confira também o spam.')
+  }
+
   const restante = Math.ceil((bloqueio.ate - agora) / 1000)
 
   return (
@@ -65,8 +82,12 @@ export default function AdminLogin() {
           <input type="password" autoComplete="current-password" value={senha} onChange={(e) => setSenha(e.target.value)} required />
         </label>
         {erro && <p className="erro">{erro}</p>}
+        {aviso && <p className="ok">{aviso}</p>}
         <button className="btn primario" disabled={enviando || bloqueado}>
           {bloqueado ? `Bloqueado (${Math.floor(restante / 60)}:${String(restante % 60).padStart(2, '0')})` : enviando ? 'Entrando…' : 'Entrar'}
+        </button>
+        <button type="button" className="btn link" onClick={esqueci} disabled={enviandoLink}>
+          {enviandoLink ? 'Enviando…' : 'Esqueci a senha'}
         </button>
       </form>
       <Link to="/">← Voltar ao cardápio</Link>

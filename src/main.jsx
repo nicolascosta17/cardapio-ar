@@ -9,6 +9,7 @@ import './styles.css'
 const AdminLogin = lazy(() => import('./admin/AdminLogin.jsx'))
 const RotaAdmin = lazy(() => import('./admin/RotaAdmin.jsx'))
 const Painel = lazy(() => import('./admin/Painel.jsx'))
+const NovaSenha = lazy(() => import('./admin/NovaSenha.jsx'))
 
 const carregando = <p className="status">Carregando…</p>
 
@@ -19,6 +20,7 @@ ReactDOM.createRoot(document.getElementById('root')).render(
         <Routes>
           <Route path="/" element={<Cardapio />} />
           <Route path="/admin/login" element={<AdminLogin />} />
+          <Route path="/admin/nova-senha" element={<NovaSenha />} />
           <Route
             path="/admin"
             element={<RotaAdmin>{(usuario) => <Painel email={usuario.email} />}</RotaAdmin>}

@@ -110,3 +110,5 @@ button { font: inherit; cursor: pointer; }
   .modal { padding: 12px 12px calc(12px + env(safe-area-inset-bottom)); }
   .modal-topo h2 { font-size: 22px; }
 }
+
+.btn.link { border: 0; background: none; text-decoration: underline; color: var(--suave); }
