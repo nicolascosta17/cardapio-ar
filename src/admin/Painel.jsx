@@ -1,5 +1,6 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { supabase, enviarArquivo, formatarPreco, validarArquivo } from '../lib/supabase'
+import GuiaEscaneamento from './GuiaEscaneamento'
 
 const VAZIO = { nome: '', descricao: '', preco: '', categoria: 'Pratos', ordem: 0, ativo: true }
 
@@ -10,6 +11,8 @@ export default function Painel({ loja }) {
   const [arquivos, setArquivos] = useState({})
   const [salvando, setSalvando] = useState(false)
   const [msg, setMsg] = useState('')
+  const [guia, setGuia] = useState(false)
+  const inputGlb = useRef(null)
 
   const carregar = async () => {
     const { data } = await supabase.from('pratos').select('*').eq('loja_id', loja.id).order('categoria').order('ordem')
@@ -80,7 +83,11 @@ export default function Painel({ loja }) {
           {[...new Set(pratos.map((p) => p.categoria))].map((c) => <option key={c} value={c} />)}
         </datalist>
         <label>Foto do prato<input type="file" accept="image/*" onChange={arquivo('imagem')} /></label>
-        <label>Modelo 3D (.glb) — Android e navegador<input type="file" accept=".glb" onChange={arquivo('glb')} /></label>
+        <div className="escanear">
+          <button type="button" className="btn escanear-btn" onClick={() => setGuia(true)}>📸 Escanear prato em 3D</button>
+          <span>Não tem o modelo 3D? Veja como escanear com o celular.</span>
+        </div>
+        <label>Modelo 3D (.glb) — Android e navegador<input ref={inputGlb} type="file" accept=".glb" onChange={arquivo('glb')} /></label>
         <label>Modelo 3D (.usdz) — iPhone (opcional)<input type="file" accept=".usdz" onChange={arquivo('usdz')} /></label>
         <label className="check"><input type="checkbox" checked={form.ativo} onChange={campo('ativo')} /> Aparece no cardápio</label>
         {msg && <p className={msg.startsWith('Erro') ? 'erro' : 'ok'}>{msg}</p>}
@@ -107,6 +114,15 @@ export default function Painel({ loja }) {
           ))}
         </tbody>
       </table>
+      {guia && (
+        <GuiaEscaneamento
+          onFechar={() => setGuia(false)}
+          onJaTenhoArquivo={() => {
+            setGuia(false)
+            setTimeout(() => { inputGlb.current?.scrollIntoView({ behavior: 'smooth', block: 'center' }); inputGlb.current?.click() }, 150)
+          }}
+        />
+      )}
       {pratos.length === 0 && <p className="status">Nenhum prato cadastrado nesta loja ainda.</p>}
     </>
   )

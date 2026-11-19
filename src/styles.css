@@ -142,3 +142,19 @@ button { font: inherit; cursor: pointer; }
 @media (max-width: 640px) {
   .cartao-loja .linha .btn { flex: 1 1 30%; }
 }
+
+/* ---------- Guia de escaneamento ---------- */
+.escanear { display: grid; gap: 6px; background: #fdf2f2; border: 1px dashed #e7b4b4; border-radius: 12px; padding: 12px; }
+.escanear span { font-size: 13px; color: var(--suave); }
+.escanear-btn { background: var(--vinho); color: var(--branco); border-color: var(--vinho); font-weight: 600; min-height: 48px; }
+.guia-fundo { position: fixed; inset: 0; z-index: 20; background: rgba(28,25,23,.55); display: flex; align-items: flex-end; justify-content: center; }
+.guia { background: var(--fundo); width: 100%; max-width: 560px; max-height: 92vh; overflow-y: auto; border-radius: 20px 20px 0 0; padding: 18px 18px calc(18px + env(safe-area-inset-bottom)); }
+@media (min-width: 641px) { .guia-fundo { align-items: center; } .guia { border-radius: 20px; } }
+.guia-topo { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+.guia h2 { font-size: 22px; }
+.guia h3 { font-family: Inter, system-ui, sans-serif; font-size: 15px; margin: 18px 0 6px; }
+.guia ul { margin: 0; padding-left: 20px; display: grid; gap: 4px; font-size: 14px; line-height: 1.4; }
+.guia-apps { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.guia-app { display: grid; gap: 2px; background: var(--branco); border: 1px solid var(--linha); border-radius: 12px; padding: 12px; text-decoration: none; color: inherit; }
+.guia-app span { font-size: 12px; color: var(--suave); }
+.guia-ok { width: 100%; margin-top: 18px; min-height: 48px; }
