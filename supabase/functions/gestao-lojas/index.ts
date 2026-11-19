@@ -1,8 +1,8 @@
 // Gestão de lojas — só o dono da plataforma (tabela public.admins) pode usar.
 // Ações:
-//   criar_loja  { nome, slug, email }      → cria a loja, o usuário responsável e devolve o link de acesso
-//   gerar_link  { loja_id, email }         → (re)gera link de acesso e vincula o e-mail à loja
-//   remover_membro { loja_id, user_id }    → tira o acesso de alguém à loja
+//   criar_loja  { nome, slug, email, username? }      → cria a loja, o usuário responsável e devolve o link de acesso
+//   gerar_link  { loja_id, email, username? }         → (re)gera link de acesso e vincula o e-mail à loja
+//   remover_membro { loja_id, user_id }                → tira o acesso de alguém à loja
 import { createClient } from 'npm:@supabase/supabase-js@2'
 
 const ORIGENS = ['https://3dcardapio.netlify.app', 'http://localhost:5173']
@@ -17,6 +17,7 @@ const cors = (origin: string | null) => ({
 
 const SLUG_OK = /^[a-z0-9]+(-[a-z0-9]+)*$/
 const EMAIL_OK = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+const USERNAME_OK = /^[a-z0-9_]{3,20}$/
 
 Deno.serve(async (req) => {
   const origin = req.headers.get('Origin')
@@ -61,14 +62,36 @@ Deno.serve(async (req) => {
     return { userId: r.data.user.id, link, novo: tipo === 'invite' }
   }
 
+  // Salva/atualiza o nome de usuário de alguém. Lança erro com `.codigoAmigavel`
+  // quando o nome já está em uso, para quem chamar decidir o que fazer.
+  async function salvarUsername(userId: string, username: string) {
+    const nome = username.trim().toLowerCase()
+    if (!USERNAME_OK.test(nome)) {
+      const e: any = new Error('Nome de usuário inválido: use letras minúsculas, números e _ (3 a 20).')
+      e.codigoAmigavel = 'username_invalido'
+      throw e
+    }
+    const { error } = await service.from('perfis').upsert({ user_id: userId, username: nome }, { onConflict: 'user_id' })
+    if (error) {
+      if (error.code === '23505') {
+        const e: any = new Error('Esse nome de usuário já está em uso.')
+        e.codigoAmigavel = 'username_em_uso'
+        throw e
+      }
+      throw error
+    }
+  }
+
   try {
     if (body.acao === 'criar_loja') {
       const nome = String(body.nome || '').trim()
       const slug = String(body.slug || '').trim().toLowerCase()
       const email = String(body.email || '').trim().toLowerCase()
+      const username = String(body.username || '').trim().toLowerCase()
       if (nome.length < 2) return resp({ erro: 'Informe o nome da loja.' }, 400)
       if (!SLUG_OK.test(slug) || slug.length < 3 || slug.length > 40) return resp({ erro: 'Endereço inválido: use letras minúsculas, números e hífen (3 a 40).' }, 400)
       if (!EMAIL_OK.test(email)) return resp({ erro: 'E-mail do responsável inválido.' }, 400)
+      if (username && !USERNAME_OK.test(username)) return resp({ erro: 'Nome de usuário inválido: use letras minúsculas, números e _ (3 a 20).' }, 400)
 
       const { data: loja, error: errLoja } = await service.from('lojas').insert({ nome, slug }).select().single()
       if (errLoja) {
@@ -80,20 +103,33 @@ Deno.serve(async (req) => {
         const { userId, link, novo } = await linkPara(email)
         const { error: errM } = await service.from('loja_membros').insert({ loja_id: loja.id, user_id: userId })
         if (errM) throw errM
+        if (username) await salvarUsername(userId, username)
         return resp({ loja, link, novo })
       } catch (e) {
         await service.from('lojas').delete().eq('id', loja.id) // desfaz a loja se o usuário falhar
+        if ((e as any).codigoAmigavel === 'username_em_uso') return resp({ erro: (e as Error).message }, 409)
+        if ((e as any).codigoAmigavel === 'username_invalido') return resp({ erro: (e as Error).message }, 400)
         throw e
       }
     }
 
     if (body.acao === 'gerar_link') {
       const email = String(body.email || '').trim().toLowerCase()
+      const username = String(body.username || '').trim().toLowerCase()
       if (!EMAIL_OK.test(email)) return resp({ erro: 'E-mail inválido.' }, 400)
+      if (username && !USERNAME_OK.test(username)) return resp({ erro: 'Nome de usuário inválido: use letras minúsculas, números e _ (3 a 20).' }, 400)
       const { data: loja } = await service.from('lojas').select('id').eq('id', body.loja_id).maybeSingle()
       if (!loja) return resp({ erro: 'Loja não encontrada.' }, 404)
       const { userId, link, novo } = await linkPara(email)
       await service.from('loja_membros').upsert({ loja_id: loja.id, user_id: userId }, { onConflict: 'loja_id,user_id', ignoreDuplicates: true })
+      if (username) {
+        try {
+          await salvarUsername(userId, username)
+        } catch (e) {
+          if ((e as any).codigoAmigavel) return resp({ erro: (e as Error).message, link, novo }, 409)
+          throw e
+        }
+      }
       return resp({ link, novo })
     }
 
@@ -102,7 +138,8 @@ Deno.serve(async (req) => {
       const lista = []
       for (const m of membros || []) {
         const { data } = await service.auth.admin.getUserById(m.user_id)
-        lista.push({ user_id: m.user_id, email: data.user?.email, ja_entrou: Boolean(data.user?.last_sign_in_at) })
+        const { data: perfil } = await service.from('perfis').select('username').eq('user_id', m.user_id).maybeSingle()
+        lista.push({ user_id: m.user_id, email: data.user?.email, username: perfil?.username || null, ja_entrou: Boolean(data.user?.last_sign_in_at) })
       }
       return resp({ membros: lista })
     }

@@ -41,6 +41,7 @@ function NovaLoja({ recarregar }) {
   const [slug, setSlug] = useState('')
   const [slugManual, setSlugManual] = useState(false)
   const [email, setEmail] = useState('')
+  const [username, setUsername] = useState('')
   const [salvando, setSalvando] = useState(false)
   const [erro, setErro] = useState('')
   const [criada, setCriada] = useState(null)
@@ -51,9 +52,9 @@ function NovaLoja({ recarregar }) {
     e.preventDefault()
     setErro(''); setSalvando(true)
     try {
-      const r = await chamar('criar_loja', { nome, slug, email })
+      const r = await chamar('criar_loja', { nome, slug, email, username: username.trim().toLowerCase() })
       setCriada({ ...r, email })
-      setNome(''); setSlug(''); setEmail(''); setSlugManual(false)
+      setNome(''); setSlug(''); setEmail(''); setUsername(''); setSlugManual(false)
       recarregar()
     } catch (err) {
       setErro(err.message)
@@ -77,6 +78,9 @@ function NovaLoja({ recarregar }) {
       <label>E-mail do responsável
         <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="dono@restaurante.com" required />
       </label>
+      <label>Nome de usuário (opcional, para entrar sem digitar o e-mail)
+        <input value={username} onChange={(e) => setUsername(e.target.value.toLowerCase())} placeholder="ex: querestaurante" minLength={3} maxLength={20} />
+      </label>
       {erro && <p className="erro">{erro}</p>}
       <button className="btn primario" disabled={salvando}>{salvando ? 'Criando…' : 'Cadastrar loja'}</button>
       {criada && (
@@ -93,6 +97,7 @@ function CartaoLoja({ loja, recarregar, onAbrirCardapio }) {
   const [aberto, setAberto] = useState(false)
   const [membros, setMembros] = useState(null)
   const [email, setEmail] = useState('')
+  const [username, setUsername] = useState('')
   const [link, setLink] = useState(null)
   const [msg, setMsg] = useState('')
   const [ocupado, setOcupado] = useState(false)
@@ -108,10 +113,10 @@ function CartaoLoja({ loja, recarregar, onAbrirCardapio }) {
     e.preventDefault()
     setMsg(''); setOcupado(true)
     try {
-      const r = await chamar('gerar_link', { loja_id: loja.id, email })
+      const r = await chamar('gerar_link', { loja_id: loja.id, email, username: username.trim().toLowerCase() })
       setLink({ link: r.link, email })
       setMembros((await chamar('listar_membros', { loja_id: loja.id })).membros)
-      setEmail('')
+      setEmail(''); setUsername('')
     } catch (err) { setMsg('Erro: ' + err.message) } finally { setOcupado(false) }
   }
 
@@ -151,7 +156,7 @@ function CartaoLoja({ loja, recarregar, onAbrirCardapio }) {
             <ul>
               {membros.map((m) => (
                 <li key={m.user_id}>
-                  <span>{m.email} <small>{m.ja_entrou ? '· já entrou' : '· ainda não entrou'}</small></span>
+                  <span>{m.email}{m.username && <> · <strong>{m.username}</strong></>} <small>{m.ja_entrou ? '· já entrou' : '· ainda não entrou'}</small></span>
                   <button className="btn perigo" onClick={() => remover(m)}>Remover</button>
                 </li>
               ))}
@@ -160,6 +165,9 @@ function CartaoLoja({ loja, recarregar, onAbrirCardapio }) {
           <form onSubmit={gerarLink} className="form">
             <label>Gerar link de acesso (novo responsável ou quem esqueceu a senha)
               <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="email@restaurante.com" required />
+            </label>
+            <label>Nome de usuário (opcional)
+              <input value={username} onChange={(e) => setUsername(e.target.value.toLowerCase())} placeholder="ex: querestaurante" minLength={3} maxLength={20} />
             </label>
             <button className="btn primario" disabled={ocupado}>{ocupado ? 'Gerando…' : 'Gerar link'}</button>
           </form>

@@ -13,10 +13,23 @@ const lerBloqueio = () => {
 }
 const salvarBloqueio = (b) => { try { localStorage.setItem(CHAVE, JSON.stringify(b)) } catch { /* ignora */ } }
 
+// Descobre o e-mail por trás do que foi digitado (e-mail direto ou nome de usuário).
+async function resolverEmail(identificador) {
+  const valor = identificador.trim()
+  if (valor.includes('@')) return valor
+  try {
+    const { data, error } = await supabase.functions.invoke('resolver-login', { body: { identificador: valor } })
+    if (error || !data?.email) return valor // deixa o signIn falhar com a mesma mensagem genérica
+    return data.email
+  } catch {
+    return valor
+  }
+}
+
 export default function AdminLogin() {
   useNoIndex()
   const { estado } = useSessaoAdmin()
-  const [email, setEmail] = useState('')
+  const [identificador, setIdentificador] = useState('')
   const [senha, setSenha] = useState('')
   const [erro, setErro] = useState('')
   const [enviando, setEnviando] = useState(false)
@@ -47,7 +60,8 @@ export default function AdminLogin() {
     if (bloqueado) return
     setErro('')
     setEnviando(true)
-    const { error } = await supabase.auth.signInWithPassword({ email: email.trim(), password: senha })
+    const email = await resolverEmail(identificador)
+    const { error } = await supabase.auth.signInWithPassword({ email, password: senha })
     setEnviando(false)
     if (error) {
       const falhas = bloqueio.falhas + 1
@@ -63,9 +77,10 @@ export default function AdminLogin() {
 
   const esqueci = async () => {
     setErro(''); setAviso('')
-    if (!email.trim()) return setErro('Digite seu e-mail acima e toque em "Esqueci a senha" de novo.')
+    if (!identificador.trim()) return setErro('Digite seu e-mail ou usuário acima e toque em "Esqueci a senha" de novo.')
     setEnviandoLink(true)
-    const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
+    const email = await resolverEmail(identificador)
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
       redirectTo: `${window.location.origin}/admin/nova-senha`
     })
     setEnviandoLink(false)
@@ -83,8 +98,8 @@ export default function AdminLogin() {
       <h1>Área do administrador</h1>
       <p className="email">Acesso restrito. Entre com o usuário cadastrado pelo responsável.</p>
       <form onSubmit={entrar} className="form card-form">
-        <label>E-mail
-          <input type="email" autoComplete="username" value={email} onChange={(e) => setEmail(e.target.value)} required />
+        <label>E-mail ou nome de usuário
+          <input type="text" autoComplete="username" value={identificador} onChange={(e) => setIdentificador(e.target.value)} required />
         </label>
         <label>Senha
           <input type="password" autoComplete="current-password" value={senha} onChange={(e) => setSenha(e.target.value)} required />

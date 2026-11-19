@@ -43,10 +43,15 @@ Abra o endereço "Network" que aparece no terminal pelo celular (mesmo Wi-Fi) pa
 4. Confira a **escala em metros** (um prato real tem ~0,27 m) — é ela que faz o prato aparecer no tamanho certo na mesa.
 5. Envie pelo `/admin`.
 
+## Login com e-mail ou nome de usuário
+- Cada pessoa pode ter um nome de usuário (`public.perfis`), definido por ela mesma em "Meu usuário" no painel, ou já na hora de cadastrar a loja/gerar um link de acesso.
+- Em `/admin/login`, o campo aceita e-mail ou nome de usuário; quando é um nome de usuário, a Edge Function `resolver-login` descobre o e-mail correspondente (sem exigir login) para então entrar normalmente. Essa função tem limite de tentativas por IP para não virar uma forma de descobrir nomes de usuário cadastrados.
+
 ## Segurança
 - A chave `sb_publishable_...` é pública por natureza; a proteção vem das regras **RLS**:
   - qualquer pessoa só **lê** pratos ativos;
-  - só usuários na tabela `admins` criam/editam/apagam pratos e arquivos.
+  - só usuários na tabela `admins` criam/editam/apagam pratos e arquivos;
+  - cada pessoa só lê/edita o próprio nome de usuário em `public.perfis`.
 - O painel valida a sessão no servidor (`getUser`), sai sozinho após 30 min parado, bloqueia o login por 5 min após 5 senhas erradas e não é indexado por buscadores.
 - O código do admin é carregado à parte; o cliente do cardápio nunca o baixa.
 - Uploads aceitam só imagens (até 5 MB) e .glb/.usdz (até 30 MB).
