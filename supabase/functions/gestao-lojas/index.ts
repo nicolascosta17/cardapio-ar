@@ -45,14 +45,20 @@ Deno.serve(async (req) => {
 
   const redirectTo = `${origin && ORIGENS.includes(origin) ? origin : SITE}/admin/nova-senha`
 
-  // Garante que o usuário existe e devolve { userId, link }
+  // Garante que o usuário existe e devolve um link do PRÓPRIO SITE com o token.
+  // O token só é usado quando a pessoa toca em "Criar senha" (verifyOtp), então
+  // prévias de link do WhatsApp ou abrir duas vezes não "queimam" o acesso.
+  const base = origin && ORIGENS.includes(origin) ? origin : SITE
   async function linkPara(email: string) {
-    const inv = await service.auth.admin.generateLink({ type: 'invite', email, options: { redirectTo } })
-    if (!inv.error) return { userId: inv.data.user.id, link: inv.data.properties.action_link, novo: true }
-    // Já existe: gera link de redefinição de senha
-    const rec = await service.auth.admin.generateLink({ type: 'recovery', email, options: { redirectTo } })
-    if (rec.error) throw rec.error
-    return { userId: rec.data.user.id, link: rec.data.properties.action_link, novo: false }
+    let tipo = 'invite'
+    let r = await service.auth.admin.generateLink({ type: 'invite', email, options: { redirectTo } })
+    if (r.error) {
+      tipo = 'recovery'
+      r = await service.auth.admin.generateLink({ type: 'recovery', email, options: { redirectTo } })
+      if (r.error) throw r.error
+    }
+    const link = `${base}/admin/nova-senha?token_hash=${encodeURIComponent(r.data.properties.hashed_token)}&type=${tipo}`
+    return { userId: r.data.user.id, link, novo: tipo === 'invite' }
   }
 
   try {
