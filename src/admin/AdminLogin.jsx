@@ -33,6 +33,14 @@ export default function AdminLogin() {
   }, [bloqueado])
 
   if (estado === 'admin') return <Navigate to="/admin" replace />
+  if (estado === 'negado')
+    return (
+      <main className="admin login">
+        <h1>Sem acesso</h1>
+        <p className="erro">Seu login funcionou, mas este usuário ainda não está vinculado a nenhuma loja. Peça ao responsável pela plataforma para liberar seu acesso.</p>
+        <button className="btn" onClick={() => supabase.auth.signOut()}>Sair</button>
+      </main>
+    )
 
   const entrar = async (e) => {
     e.preventDefault()

@@ -13,7 +13,7 @@ export default function TrocarSenha({ email, onFechar }) {
   const salvar = async (e) => {
     e.preventDefault()
     setMsg('')
-    if (nova.length < 8) return setMsg('Erro: a nova senha precisa ter pelo menos 8 caracteres.')
+    if (nova.length < 6) return setMsg('Erro: a nova senha precisa ter pelo menos 6 caracteres.')
     if (nova !== repetir) return setMsg('Erro: as duas senhas novas não são iguais.')
     if (nova === atual) return setMsg('Erro: a nova senha é igual à atual.')
 
@@ -37,11 +37,11 @@ export default function TrocarSenha({ email, onFechar }) {
       <label>Senha atual
         <input type="password" autoComplete="current-password" value={atual} onChange={(e) => setAtual(e.target.value)} required />
       </label>
-      <label>Nova senha (mínimo 8 caracteres)
-        <input type="password" autoComplete="new-password" value={nova} onChange={(e) => setNova(e.target.value)} required minLength={8} />
+      <label>Nova senha (mínimo 6 caracteres)
+        <input type="password" autoComplete="new-password" value={nova} onChange={(e) => setNova(e.target.value)} required minLength={6} />
       </label>
       <label>Repita a nova senha
-        <input type="password" autoComplete="new-password" value={repetir} onChange={(e) => setRepetir(e.target.value)} required minLength={8} />
+        <input type="password" autoComplete="new-password" value={repetir} onChange={(e) => setRepetir(e.target.value)} required minLength={6} />
       </label>
       {msg && <p className={msg.startsWith('Erro') ? 'erro' : 'ok'}>{msg}</p>}
       <div className="linha">
