@@ -16,7 +16,7 @@ export default function Cardapio() {
     let ativo = true
     setCarregando(true); setErro(''); setLoja(null); setPratos([])
     ;(async () => {
-      const buscarLoja = () => supabase.from('lojas').select('id, nome, slug').eq('slug', slug).eq('ativo', true).maybeSingle()
+      const buscarLoja = () => supabase.from('lojas').select('id, nome, slug, logo_url').eq('slug', slug).eq('ativo', true).maybeSingle()
       let { data: l, error: e1 } = await buscarLoja()
       if (e1) ({ data: l, error: e1 } = await buscarLoja()) // tenta de novo uma vez
       if (!ativo) return
@@ -44,7 +44,10 @@ export default function Cardapio() {
     <main className="cardapio">
       <header className="hero">
         <p className="sobre">Cardápio em realidade aumentada</p>
-        <h1>{loja?.nome || ' '}</h1>
+        <div className="hero-marca">
+          {loja?.logo_url && <img className="hero-logo" src={loja.logo_url} alt={'Logo de ' + loja.nome} />}
+          <h1>{loja?.nome || ' '}</h1>
+        </div>
         <p>Toque em um prato com <span className="tag3d">3D</span> para vê-lo de todos os ângulos — e em cima da sua mesa.</p>
       </header>
 

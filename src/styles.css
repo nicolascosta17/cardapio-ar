@@ -158,3 +158,11 @@ button { font: inherit; cursor: pointer; }
 .guia-app { display: grid; gap: 2px; background: var(--branco); border: 1px solid var(--linha); border-radius: 12px; padding: 12px; text-decoration: none; color: inherit; }
 .guia-app span { font-size: 12px; color: var(--suave); }
 .guia-ok { width: 100%; margin-top: 18px; min-height: 48px; }
+
+/* Logos opcionais: as cores, fontes e demais elementos mantêm o estilo atual. */
+.hero-marca { display: flex; align-items: center; gap: 12px; }
+.hero-marca h1 { min-width: 0; }
+.hero-logo { display: block; width: 64px; height: 64px; object-fit: contain; flex-shrink: 0; }
+.nome-com-logo { display: flex; align-items: center; gap: 10px; }
+.logo-cartao { display: block; width: 44px; height: 44px; object-fit: contain; flex-shrink: 0; }
+@media (max-width: 640px) { .hero-logo { width: 48px; height: 48px; } }
