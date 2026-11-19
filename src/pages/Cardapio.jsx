@@ -78,11 +78,21 @@ export default function Cardapio() {
             <li key={p.id}>
               <button className="card" onClick={() => tem3d && setAberto(p)} disabled={!tem3d}>
                 <div className="thumb">
-                  {p.imagem_url ? (
+                  {tem3d ? (
+                    <model-viewer
+                      src={p.modelo_glb_url}
+                      poster={p.imagem_url || undefined}
+                      alt={`Modelo 3D giratório de ${p.nome}`}
+                      reveal="auto"
+                      loading="lazy"
+                      auto-rotate
+                      auto-rotate-delay="0"
+                      rotation-per-second="20deg"
+                      interaction-prompt="none"
+                      style={{ width: '100%', height: '100%', pointerEvents: 'none' }}
+                    />
+                  ) : p.imagem_url ? (
                     <img src={p.imagem_url} alt="" loading="lazy" />
-                  ) : tem3d ? (
-                    <model-viewer src={p.modelo_glb_url} auto-rotate interaction-prompt="none"
-                      style={{ width: '100%', height: '100%', pointerEvents: 'none' }} />
                   ) : (
                     <span className="sem-foto">🍽️</span>
                   )}

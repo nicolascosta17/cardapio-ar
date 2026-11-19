@@ -37,6 +37,8 @@ export default function Visualizador3D({ prato, onFechar }) {
         camera-controls
         touch-action="pan-y"
         auto-rotate
+        auto-rotate-delay="0"
+        rotation-per-second="20deg"
         shadow-intensity="1"
         exposure="1"
         style={{ width: '100%', flex: 1, background: 'transparent' }}
