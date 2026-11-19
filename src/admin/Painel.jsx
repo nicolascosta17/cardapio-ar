@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { supabase, enviarArquivo, formatarPreco, validarArquivo } from '../lib/supabase'
 import GuiaEscaneamento from './GuiaEscaneamento'
 
@@ -6,6 +6,7 @@ const VAZIO = { nome: '', descricao: '', preco: '', categoria: 'Pratos', ordem: 
 
 export default function Painel({ loja }) {
   const [pratos, setPratos] = useState([])
+  const [categoriaAba, setCategoriaAba] = useState('Todos')
   const [form, setForm] = useState(VAZIO)
   const [editando, setEditando] = useState(null)
   const [arquivos, setArquivos] = useState({})
@@ -18,7 +19,17 @@ export default function Painel({ loja }) {
     const { data } = await supabase.from('pratos').select('*').eq('loja_id', loja.id).order('categoria').order('ordem')
     setPratos(data || [])
   }
-  useEffect(() => { carregar(); limpar(); setMsg('') }, [loja.id]) // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { carregar(); limpar(); setMsg(''); setCategoriaAba('Todos') }, [loja.id]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Cada categoria cadastrada vira uma aba, sem alterar o cadastro dos pratos.
+  const categorias = useMemo(
+    () => ['Todos', ...new Set(pratos.map((p) => p.categoria).filter(Boolean))],
+    [pratos]
+  )
+  const abaAtual = categorias.includes(categoriaAba) ? categoriaAba : 'Todos'
+  const pratosVisiveis = abaAtual === 'Todos'
+    ? pratos
+    : pratos.filter((p) => p.categoria === abaAtual)
 
   const campo = (k) => (e) =>
     setForm({ ...form, [k]: e.target.type === 'checkbox' ? e.target.checked : e.target.value })
@@ -97,10 +108,21 @@ export default function Painel({ loja }) {
         </div>
       </form>
 
+      {pratos.length > 0 && (
+        <nav className="filtros" aria-label="Categorias dos pratos cadastrados">
+          {categorias.map((c) => (
+            <button type="button" key={c} className={c === abaAtual ? 'ativo' : ''}
+              aria-pressed={c === abaAtual} onClick={() => setCategoriaAba(c)}>
+              {c}
+            </button>
+          ))}
+        </nav>
+      )}
+
       <table className="tabela">
         <thead><tr><th>Prato</th><th>Categoria</th><th>Preço</th><th>3D</th><th></th></tr></thead>
         <tbody>
-          {pratos.map((p) => (
+          {pratosVisiveis.map((p) => (
             <tr key={p.id} className={p.ativo ? '' : 'inativo'}>
               <td data-label="Prato" className="nome">{p.nome}</td>
               <td data-label="Categoria">{p.categoria}</td>

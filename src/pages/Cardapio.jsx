@@ -14,7 +14,7 @@ export default function Cardapio() {
 
   useEffect(() => {
     let ativo = true
-    setCarregando(true); setErro(''); setLoja(null); setPratos([])
+    setCarregando(true); setErro(''); setLoja(null); setPratos([]); setCategoria('Todos')
     ;(async () => {
       const buscarLoja = () => supabase.from('lojas').select('id, nome, slug, logo_url').eq('slug', slug).eq('ativo', true).maybeSingle()
       let { data: l, error: e1 } = await buscarLoja()
@@ -51,10 +51,11 @@ export default function Cardapio() {
         <p>Toque em um prato com <span className="tag3d">3D</span> para vê-lo de todos os ângulos — e em cima da sua mesa.</p>
       </header>
 
-      {categorias.length > 2 && (
-        <nav className="filtros">
+      {categorias.length > 1 && (
+        <nav className="filtros" aria-label="Categorias do cardápio">
           {categorias.map((c) => (
-            <button key={c} className={c === categoria ? 'ativo' : ''} onClick={() => setCategoria(c)}>
+            <button type="button" key={c} className={c === categoria ? 'ativo' : ''}
+              aria-pressed={c === categoria} onClick={() => setCategoria(c)}>
               {c}
             </button>
           ))}
