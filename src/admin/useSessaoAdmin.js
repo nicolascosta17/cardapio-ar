@@ -3,7 +3,7 @@ import { supabase } from '../lib/supabase'
 
 const INATIVIDADE_MS = 30 * 60 * 1000 // sai sozinho após 30 min parado
 
-// estado: 'carregando' | 'deslogado' | 'negado' | 'admin'
+// estado: 'carregando' | 'deslogado' | 'negado' | 'admin' | 'erro'
 // superAdmin: dono da plataforma (cadastra lojas)
 // lojas: lojas que esta pessoa pode gerenciar (super admin vê todas)
 export function useSessaoAdmin() {
@@ -35,12 +35,14 @@ export function useSessaoAdmin() {
       }
       // getUser() valida o token no servidor (não confia só no que está no navegador)
       const { data: { user }, error } = await supabase.auth.getUser()
+      if (error && !error.status) { if (ativo) setEstado('erro'); return } // sem internet: não desloga
       if (error || !user) {
         await supabase.auth.signOut()
         if (ativo) setEstado('deslogado')
         return
       }
-      const { data: adm } = await supabase.from('admins').select('user_id').eq('user_id', user.id).maybeSingle()
+      const { data: adm, error: errAdm } = await supabase.from('admins').select('user_id').eq('user_id', user.id).maybeSingle()
+      if (errAdm) { if (ativo) setEstado('erro'); return }
       const ehSuper = Boolean(adm)
       const lista = await carregarLojas(user, ehSuper)
       if (!ativo) return
@@ -51,8 +53,9 @@ export function useSessaoAdmin() {
 
     supabase.auth.getSession().then(({ data }) => verificar(data.session))
     const { data: sub } = supabase.auth.onAuthStateChange((evento, session) => {
-      if (evento === 'SIGNED_OUT') { setUsuario(null); setEstado('deslogado') }
-      else if (evento === 'SIGNED_IN' || evento === 'USER_UPDATED') verificar(session)
+      if (evento === 'SIGNED_OUT') { setUsuario(null); setSuperAdmin(false); setLojas([]); setEstado('deslogado') }
+      // setTimeout: chamar o Supabase dentro deste aviso pode travar o login (recomendação do Supabase)
+      else if (evento === 'SIGNED_IN' || evento === 'USER_UPDATED') setTimeout(() => verificar(session), 0)
     })
     return () => { ativo = false; sub.subscription.unsubscribe() }
   }, [carregarLojas])

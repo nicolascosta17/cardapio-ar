@@ -16,7 +16,9 @@ export default function Cardapio() {
     let ativo = true
     setCarregando(true); setErro(''); setLoja(null); setPratos([])
     ;(async () => {
-      const { data: l, error: e1 } = await supabase.from('lojas').select('id, nome, slug').eq('slug', slug).eq('ativo', true).maybeSingle()
+      const buscarLoja = () => supabase.from('lojas').select('id, nome, slug').eq('slug', slug).eq('ativo', true).maybeSingle()
+      let { data: l, error: e1 } = await buscarLoja()
+      if (e1) ({ data: l, error: e1 } = await buscarLoja()) // tenta de novo uma vez
       if (!ativo) return
       if (e1) { setErro('Não foi possível carregar o cardápio.'); setCarregando(false); return }
       if (!l) { setErro('nao-encontrada'); setCarregando(false); return }
@@ -60,6 +62,10 @@ export default function Cardapio() {
       {erro === 'nao-encontrada' ? (
         <p className="status">Cardápio não encontrado. <Link to="/">Voltar</Link></p>
       ) : erro && <p className="status erro">{erro}</p>}
+
+      {!carregando && !erro && pratos.length === 0 && (
+        <p className="status">O cardápio desta loja está sendo preparado. Volte em breve!</p>
+      )}
 
       <ul className="lista">
         {visiveis.map((p) => {

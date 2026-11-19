@@ -10,6 +10,14 @@ export default function RotaAdmin({ children }) {
   const sessao = useSessaoAdmin()
 
   if (sessao.estado === 'carregando') return <p className="status">Verificando acesso…</p>
+  if (sessao.estado === 'erro')
+    return (
+      <main className="admin login">
+        <h1>Sem conexão</h1>
+        <p className="erro">Não foi possível falar com o servidor. Confira a internet e tente de novo.</p>
+        <button className="btn primario" onClick={() => window.location.reload()}>Tentar de novo</button>
+      </main>
+    )
   if (sessao.estado === 'deslogado') return <Navigate to="/admin/login" replace />
   if (sessao.estado === 'negado')
     return (
