@@ -39,8 +39,11 @@ export default function Visualizador3D({ prato, onFechar }) {
         auto-rotate
         auto-rotate-delay="0"
         rotation-per-second="20deg"
-        shadow-intensity="1"
-        exposure="1"
+        environment-image="neutral"
+        exposure="1.1"
+        shadow-intensity="0.8"
+        shadow-softness="1"
+        tone-mapping="commerce"
         style={{ width: '100%', flex: 1, background: 'transparent' }}
       >
         <button slot="ar-button" className="btn-ar">📱 Ver na minha mesa</button>
